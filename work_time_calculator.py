@@ -9,6 +9,22 @@ def blank_lines(line: str):
     return False if line == '\n' else True
 
 
+def _group_times_by_tags(grouped_events):
+    return {
+        'Mar 8, 2021': {
+            '😴': ['8:15 AM to 8:45 AM'],
+            '👨🏻‍🏫': ['8:45 AM to 10:30 AM', '1:00 PM to 3:30 PM']
+        },
+        'Mar 9, 2021': {
+            '👨🏻‍💻': ['4:45 PM to 5:30 PM']
+        },
+        'Mar 10, 2021': {
+            '👨🏻‍🏫': ['6:00 AM to 7:00 AM', '9:00 AM to 10:00 AM'],
+            '😴': ['7:30 AM to 8:45 AM', '10:30 AM to 12:00 PM']
+        }
+    }
+
+
 def _group_events_by_date(clean_lines: List[str]):  # TODO mark private
 
     def pair_tag_with_event(stuff, acc):
