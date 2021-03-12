@@ -1,3 +1,4 @@
+from functools import reduce
 from typing import List
 
 LEADERSHIP = '👨🏻‍🏫'
@@ -7,6 +8,36 @@ ETC = '😴'
 
 def blank_lines(line: str):
     return False if line == '\n' else True
+
+
+def _hour_to_minutes(hour):
+    split_hour = hour.split()
+    meridian = split_hour[1]
+    hour_and_minutes = split_hour[0].split(':')
+    if hour_and_minutes[0] == '12':
+        hour_and_minutes[0] = '0'
+    total_minutes = (int(hour_and_minutes[0]) * 60) + (int(hour_and_minutes[1])) + (0 if meridian == 'AM' else 720)
+    return total_minutes
+
+
+def _count_time(time):  # maybe total_times?
+    start_and_end = time.split(' to ')
+    total_minutes = reduce(lambda x, y: y - x, map(_hour_to_minutes, start_and_end))
+    return total_minutes / 60
+
+
+def _total_times(times_grouped_by_tag):
+    dates_with_totaled_times = {}
+    for date, tag_and_times in times_grouped_by_tag.items():
+        tagged_totals = []
+        dates_with_totaled_times[date] = tagged_totals
+        for tag, times in tag_and_times.items():
+            total_time = reduce(lambda x, y: x + y, map(_count_time, times))
+            tagged_totals.append((tag, total_time))
+            # dates_with_totaled_times[date] = {tag: total_time}
+            print(f'{times} is {total_time} hours')
+
+    return dates_with_totaled_times
 
 
 def _group_times_by_tag(grouped_events):
@@ -95,11 +126,12 @@ def _clean(lines: List[str]):
 
 
 def _main():
-    with open('input.txt', encoding='utf8', mode='r') as f:
+    with open('this-week.txt', encoding='utf8', mode='r') as f:
         lines = f.readlines()
         cleaned = _clean(lines)
         grouped = _group_events_by_date(cleaned)
         grouped_even_more = _group_times_by_tag(grouped)
+        dates_with_totals = _total_times(grouped_even_more)
         # group_events_by_date(lines)
         # tags_and_schedules = list(filter(blank_lines, lines))
         # cleaned = list(map(lambda l: l.rstrip('\n').lstrip('Scheduled: '), tags_and_schedules))
@@ -113,8 +145,18 @@ def _main():
         #
         # mapped_events = list(map(lambda e: {e[1][0]: (e[0], e[1][1])}, events))
         # print(grouped)
-        for k, v in grouped_even_more.items():
+        for k, v in dates_with_totals.items():
             print(f'{k}:  {v}')
+
+        with open('output.txt', 'w') as output:
+            for k, v in dates_with_totals.items():
+                # output.write(f'{k}:  {v}\n')
+                output.write(f'{k}: ')
+
+                for pair in v:
+                    print(pair[0])
+                    output.write(f'{pair[0]}: {pair[1]} ')
+                output.write('\n')
 
 
 if __name__ == '__main__':
