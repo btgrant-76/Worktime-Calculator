@@ -9,20 +9,24 @@ def blank_lines(line: str):
     return False if line == '\n' else True
 
 
-def _group_times_by_tags(grouped_events):
-    return {
-        'Mar 8, 2021': {
-            '😴': ['8:15 AM to 8:45 AM'],
-            '👨🏻‍🏫': ['8:45 AM to 10:30 AM', '1:00 PM to 3:30 PM']
-        },
-        'Mar 9, 2021': {
-            '👨🏻‍💻': ['4:45 PM to 5:30 PM']
-        },
-        'Mar 10, 2021': {
-            '👨🏻‍🏫': ['6:00 AM to 7:00 AM', '9:00 AM to 10:00 AM'],
-            '😴': ['7:30 AM to 8:45 AM', '10:30 AM to 12:00 PM']
-        }
-    }
+def _group_times_by_tag(grouped_events):
+    final = {}
+    for k, v in grouped_events.items():
+        times_by_tag = {}
+        # print(f'k: {k}, v: {v}')
+        for tag_and_time in v:
+            tag = tag_and_time[0]
+            time = tag_and_time[1]
+            times = times_by_tag.get(tag)
+
+            if times:
+                times.append(time)
+            else:
+                new_times = [time]
+                times_by_tag[tag] = new_times
+        final[k] = times_by_tag
+
+    return final
 
 
 def _group_events_by_date(clean_lines: List[str]):  # TODO mark private
@@ -95,6 +99,7 @@ def _main():
         lines = f.readlines()
         cleaned = _clean(lines)
         grouped = _group_events_by_date(cleaned)
+        grouped_even_more = _group_times_by_tag(grouped)
         # group_events_by_date(lines)
         # tags_and_schedules = list(filter(blank_lines, lines))
         # cleaned = list(map(lambda l: l.rstrip('\n').lstrip('Scheduled: '), tags_and_schedules))
@@ -108,7 +113,7 @@ def _main():
         #
         # mapped_events = list(map(lambda e: {e[1][0]: (e[0], e[1][1])}, events))
         # print(grouped)
-        for k, v in grouped.items():
+        for k, v in grouped_even_more.items():
             print(f'{k}:  {v}')
 
 

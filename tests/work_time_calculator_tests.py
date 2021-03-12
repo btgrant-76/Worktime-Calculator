@@ -1,4 +1,4 @@
-from work_time_calculator import _group_events_by_date, _clean, _group_times_by_tags
+from work_time_calculator import _group_events_by_date, _clean, _group_times_by_tag
 
 FILE_LINES = [
     '😴 .5\n',
@@ -71,7 +71,7 @@ def test_tag_grouping():
         ]
     }
 
-    times_grouped_by_tag = _group_times_by_tags(grouped_events)
+    times_grouped_by_tag = _group_times_by_tag(grouped_events)
     assert times_grouped_by_tag == {
         'Mar 8, 2021': {
             '😴': ['8:15 AM to 8:45 AM'],
