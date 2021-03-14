@@ -5,6 +5,8 @@ LEADERSHIP = '👨🏻‍🏫'
 BUILDING = '👨🏻‍💻'
 ETC = '😴'
 
+# TODO re-order functions based on use
+
 
 def blank_lines(line: str):
     return False if line == '\n' else True
@@ -132,31 +134,28 @@ def _main():
         grouped = _group_events_by_date(cleaned)
         grouped_even_more = _group_times_by_tag(grouped)
         dates_with_totals = _total_times(grouped_even_more)
-        # group_events_by_date(lines)
-        # tags_and_schedules = list(filter(blank_lines, lines))
-        # cleaned = list(map(lambda l: l.rstrip('\n').lstrip('Scheduled: '), tags_and_schedules))
-        # assert len(cleaned) % 2 == 0, f'{len(cleaned)}, {cleaned}'
-        #
-        # events = []
-        # for i in range(1, int(len(cleaned) / 2)):
-        #     tag = cleaned.pop(0)
-        #     schedule = cleaned.pop(0)
-        #     events.append((tag, schedule.split(' at ')))
-        #
-        # mapped_events = list(map(lambda e: {e[1][0]: (e[0], e[1][1])}, events))
-        # print(grouped)
-        for k, v in dates_with_totals.items():
-            print(f'{k}:  {v}')
 
         with open('output.txt', 'w') as output:
-            for k, v in dates_with_totals.items():
-                # output.write(f'{k}:  {v}\n')
-                output.write(f'{k}: ')
+            totals = {
+                LEADERSHIP: 0,
+                ETC: 0,
+                BUILDING: 0
+            }
 
-                for pair in v:
-                    print(pair[0])
-                    output.write(f'{pair[0]}: {pair[1]} ')
+            for date, tags_and_hours_totals in dates_with_totals.items():
+                output.write(f'{date}: ')
+                for pair in tags_and_hours_totals:
+                    tag = pair[0]
+                    hours = pair[1]
+
+                    weekly_total = totals[tag]
+                    totals[tag] = weekly_total + hours
+
+                    output.write(f'{tag}: {hours} ')
                 output.write('\n')
+
+            for tag, hours in totals.items():
+                output.write(f'{tag}: {hours} ')
 
 
 if __name__ == '__main__':
