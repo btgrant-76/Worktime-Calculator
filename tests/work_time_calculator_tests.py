@@ -1,4 +1,5 @@
-from work_time_calculator import _group_events_by_date, _clean, _group_times_by_tag, _total_times, _count_time
+from work_time_calculator import _group_events_by_date, _clean, _group_times_by_tag, _total_times, _count_time, \
+    _generate_subtotal_output_lines, _generate_total_line
 
 from pytest import mark
 
@@ -130,3 +131,53 @@ def test_total_times():
 ])
 def test_count_time(input_time, minutes):
     assert _count_time(input_time) == minutes
+
+
+def test_generate_file_lines():
+    totaled = {
+        'Mar 8, 2021': [
+            ('😴', .5),
+            ('👨🏻‍🏫', 4.25)
+        ],
+        'Mar 9, 2021': [
+            ('👨🏻‍💻', .75)
+        ],
+        'Mar 10, 2021': [
+            ('👨🏻‍🏫', 2.0),
+            ('😴', 2.75)
+        ]
+    }
+
+    assert _generate_subtotal_output_lines(totaled) == [
+        'Mar 8, 2021: 👨🏻‍💻: 0 👨🏻‍🏫: 4.25 😴: 0.5',
+        'Mar 9, 2021: 👨🏻‍💻: 0.75 👨🏻‍🏫: 0 😴: 0',
+        'Mar 10, 2021: 👨🏻‍💻: 0 👨🏻‍🏫: 2.0 😴: 2.75'
+    ]
+
+
+def test_generate_total_line():
+    totaled = {
+        'Mar 8, 2021': [
+            ('😴', .5),
+            ('👨🏻‍🏫', 4.25)
+        ],
+        'Mar 9, 2021': [
+            ('👨🏻‍💻', .75)
+        ],
+        'Mar 10, 2021': [
+            ('👨🏻‍🏫', 2.0),
+            ('😴', 2.75)
+        ]
+    }
+
+    assert _generate_total_line(totaled) == '👨🏻‍💻: 0.75/16 👨🏻‍🏫: 6.25/16 😴: 3.25/8'
+
+
+def test_generate_total_line_default_to_zero():
+    totaled = {
+        'Mar 8, 2021': [],
+        'Mar 9, 2021': [],
+        'Mar 10, 2021': []
+    }
+
+    assert _generate_total_line(totaled) == '👨🏻‍💻: 0/16 👨🏻‍🏫: 0/16 😴: 0/8'
