@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from functools import reduce
 from typing import List
 
@@ -148,9 +149,9 @@ def _generate_targets(hours):
     return targets
 
 
-def _generate_total_line(totaled_items):
+def _generate_total_line(totaled_items, available_hours=40):
     starter = {BUILDING: 0, LEADERSHIP: 0, ETC: 0}
-    target = _generate_targets(TOTAL_WORK_HOURS)
+    target = _generate_targets(available_hours)
 
     for tagged_totals in totaled_items.values():
         for tag, total in tagged_totals:
@@ -165,19 +166,25 @@ def _generate_total_line(totaled_items):
 
 
 def _main():
-    with open('this-week.txt', encoding='utf8', mode='r') as f:
+    input_file_name = input('input file name:  ')
+    available_hours_input = input('available hours (default = 40):  ')
+    available_hours = 40 if available_hours_input.strip() == '' else int(available_hours_input)
+    with open(input_file_name, encoding='utf8', mode='r') as f:
         lines = f.readlines()
         cleaned = _clean(lines)
         grouped = _group_events_by_date(cleaned)
         grouped_even_more = _group_times_by_tag(grouped)
         dates_with_totals = _total_times(grouped_even_more)
 
-        with open('output.txt', 'w') as output:
+        output_file_name = f'calculated-{input_file_name}'
+        with open(output_file_name, 'w') as output:
             for line in _generate_subtotal_output_lines(dates_with_totals):
                 output.write(line + '\n')
 
             output.write('\n')
-            output.write(_generate_total_line(dates_with_totals))
+            output.write(_generate_total_line(dates_with_totals, available_hours))
+
+        print(f'calculations written to "{output_file_name}"')
 
 
 if __name__ == '__main__':
