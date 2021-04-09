@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from functools import reduce
-from typing import List
+from typing import List, AnyStr, Iterator, Any
+import sys
 
 LEADERSHIP = "👨🏻‍🏫"
 BUILDING = "👨🏻‍💻"
@@ -9,62 +10,70 @@ ETC = "😴"
 TOTAL_WORK_HOURS = 40
 
 
-# TODO re-order functions based on use
+def _generate_targets(hours):
+    target_percentages = {BUILDING: 0.4, LEADERSHIP: 0.4, ETC: 0.2}
+    targets = {}
+
+    for tag, percentage in target_percentages.items():
+        targets[tag] = target_percentages[tag] * hours
+
+    return targets
 
 
-def blank_lines(line: str):
-    return False if line == "\n" else True
+def _generate_total_line(totaled_items, available_hours=40):
+    starter = {BUILDING: 0, LEADERSHIP: 0, ETC: 0}
+    target = _generate_targets(available_hours)
+
+    for tagged_totals in totaled_items.values():
+        for tag, total in tagged_totals:
+            tag_total = starter[tag]
+            starter[tag] = tag_total + total
+
+    line = ""
+    for k, v in starter.items():
+        line += f'{k}: {v}/{str(target[k]).rstrip(".0")} '
+
+    return line.rstrip(" ")
 
 
-def _hour_to_minutes(hour):
-    split_hour = hour.split()
-    meridian = split_hour[1]
-    hour_and_minutes = split_hour[0].split(":")
-    if hour_and_minutes[0] == "12":
-        hour_and_minutes[0] = "0"
-    total_minutes = (
-        (int(hour_and_minutes[0]) * 60)
-        + (int(hour_and_minutes[1]))
-        + (0 if meridian == "AM" else 720)
+def _main(input_file_name: str, available_hours: int):
+    with open(input_file_name, encoding="utf8", mode="r") as f:
+        lines = f.readlines()
+        cleaned = _clean(lines)
+        grouped = _group_events_by_date(cleaned)
+        grouped_even_more = _group_times_by_tag(grouped)
+        dates_with_totals = _total_times(grouped_even_more)
+
+        output_file_name = f"calculated-{input_file_name}"
+        with open(output_file_name, "w") as output:
+            for line in _generate_subtotal_output_lines(dates_with_totals):
+                output.write(line + "\n")
+
+            output.write("\n")
+            output.write(_generate_total_line(dates_with_totals, available_hours))
+
+        print(f'calculations written to "{output_file_name}"')
+
+
+def _clean(lines: List[str]):
+    no_blank_lines = filter(lambda l: l != "\n", lines)
+    lines_with_cleaned_tags = map(_clean_tag, no_blank_lines)
+    cleaned_and_stripped = map(
+        lambda l: l.rstrip("\n").lstrip("Scheduled: "), lines_with_cleaned_tags
     )
-    return total_minutes
+
+    return list(cleaned_and_stripped)
 
 
-def _count_time(time):  # TODO maybe total_times?
-    start_and_end = time.split(" to ")
-    total_minutes = reduce(lambda x, y: y - x, map(_hour_to_minutes, start_and_end))
-    return total_minutes / 60
-
-
-def _total_times(times_grouped_by_tag):
-    dates_with_totaled_times = {}
-    for date, tag_and_times in times_grouped_by_tag.items():
-        tagged_totals = []
-        dates_with_totaled_times[date] = tagged_totals
-        for tag, times in tag_and_times.items():
-            total_time = reduce(lambda x, y: x + y, map(_count_time, times))
-            tagged_totals.append((tag, total_time))
-
-    return dates_with_totaled_times
-
-
-def _group_times_by_tag(grouped_events):
-    final = {}
-    for k, v in grouped_events.items():
-        times_by_tag = {}
-        for tag_and_time in v:
-            tag = tag_and_time[0]
-            time = tag_and_time[1]
-            times = times_by_tag.get(tag)
-
-            if times:
-                times.append(time)
-            else:
-                new_times = [time]
-                times_by_tag[tag] = new_times
-        final[k] = times_by_tag
-
-    return final
+def _clean_tag(line: AnyStr) -> str:
+    if line.startswith(ETC):
+        return ETC
+    elif line.startswith(LEADERSHIP):
+        return LEADERSHIP
+    elif line.startswith(BUILDING):
+        return BUILDING
+    else:
+        return line
 
 
 def _group_events_by_date(clean_lines: List[str]):
@@ -102,26 +111,55 @@ def _group_events_by_date(clean_lines: List[str]):
     return group_events(tag_and_time_by_date)
 
 
-def clean_tag(line):
-    if line.startswith(ETC):
-        return ETC
-    elif line.startswith(LEADERSHIP):
-        return LEADERSHIP
-    elif line.startswith(BUILDING):
-        return BUILDING
-    else:
-        return line
+def _group_times_by_tag(grouped_events):
+    final = {}
+    for k, v in grouped_events.items():
+        times_by_tag = {}
+        for tag_and_time in v:
+            tag = tag_and_time[0]
+            time = tag_and_time[1]
+            times = times_by_tag.get(tag)
+
+            if times:
+                times.append(time)
+            else:
+                new_times = [time]
+                times_by_tag[tag] = new_times
+        final[k] = times_by_tag
+
+    return final
 
 
-# TODO try simplifying this following
-#  https://stackoverflow.com/questions/24831476/what-is-the-python-way-of-chaining-maps-and-filters
-def _clean(lines: List[str]):
-    return list(
-        map(
-            lambda l: l.rstrip("\n").lstrip("Scheduled: "),
-            map(clean_tag, filter(lambda l: l != "\n", lines)),
-        )
+def _total_times(times_grouped_by_tag):
+    dates_with_totaled_times = {}
+    for date, tag_and_times in times_grouped_by_tag.items():
+        tagged_totals = []
+        dates_with_totaled_times[date] = tagged_totals
+        for tag, times in tag_and_times.items():
+            total_time = reduce(lambda x, y: x + y, map(_count_time, times))
+            tagged_totals.append((tag, total_time))
+
+    return dates_with_totaled_times
+
+
+def _hour_to_minutes(hour):
+    split_hour = hour.split()
+    meridian = split_hour[1]
+    hour_and_minutes = split_hour[0].split(":")
+    if hour_and_minutes[0] == "12":
+        hour_and_minutes[0] = "0"
+    total_minutes = (
+        (int(hour_and_minutes[0]) * 60)
+        + (int(hour_and_minutes[1]))
+        + (0 if meridian == "AM" else 720)
     )
+    return total_minutes
+
+
+def _count_time(time):  # TODO maybe total_times?
+    start_and_end = time.split(" to ")
+    total_minutes = reduce(lambda x, y: y - x, map(_hour_to_minutes, start_and_end))
+    return total_minutes / 60
 
 
 def _generate_subtotal_output_lines(totaled_times):
@@ -144,55 +182,13 @@ def _generate_subtotal_output_lines(totaled_times):
     return lines
 
 
-def _generate_targets(hours):
-    target_percentages = {BUILDING: 0.4, LEADERSHIP: 0.4, ETC: 0.2}
-    targets = {}
-
-    for tag, percentage in target_percentages.items():
-        targets[tag] = target_percentages[tag] * hours
-
-    return targets
-
-
-def _generate_total_line(totaled_items, available_hours=40):
-    starter = {BUILDING: 0, LEADERSHIP: 0, ETC: 0}
-    target = _generate_targets(available_hours)
-
-    for tagged_totals in totaled_items.values():
-        for tag, total in tagged_totals:
-            tag_total = starter[tag]
-            starter[tag] = tag_total + total
-
-    line = ""
-    for k, v in starter.items():
-        line += f'{k}: {v}/{str(target[k]).rstrip(".0")} '
-
-    return line.rstrip(" ")
-
-
-def _main():
-    input_file_name = input("input file name:  ")
-    available_hours_input = input("available hours (default = 40):  ")
-    available_hours = (
-        40 if available_hours_input.strip() == "" else int(available_hours_input)
-    )
-    with open(input_file_name, encoding="utf8", mode="r") as f:
-        lines = f.readlines()
-        cleaned = _clean(lines)
-        grouped = _group_events_by_date(cleaned)
-        grouped_even_more = _group_times_by_tag(grouped)
-        dates_with_totals = _total_times(grouped_even_more)
-
-        output_file_name = f"calculated-{input_file_name}"
-        with open(output_file_name, "w") as output:
-            for line in _generate_subtotal_output_lines(dates_with_totals):
-                output.write(line + "\n")
-
-            output.write("\n")
-            output.write(_generate_total_line(dates_with_totals, available_hours))
-
-        print(f'calculations written to "{output_file_name}"')
-
-
 if __name__ == "__main__":
-    _main()
+    if len(sys.argv) == 1:
+        print("please provide an input file name")
+        exit(-1)
+
+    input_file: str = sys.argv[1].strip()
+    print(f"input file name is '{input_file}'")
+
+    hours_input: str = input("available hours (default = 40):  ")
+    _main(input_file, 40 if hours_input.strip() == "" else int(hours_input))

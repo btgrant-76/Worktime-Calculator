@@ -1,2 +1,10 @@
 .idea/
 *.iml
+/pytest-report.xml
+/coverage.xml
+/.coverage
+__pycache__
+.vscode/
+
+# Poetry
+dist/
