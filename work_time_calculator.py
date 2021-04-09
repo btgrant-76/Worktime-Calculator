@@ -2,9 +2,9 @@
 from functools import reduce
 from typing import List
 
-LEADERSHIP = '👨🏻‍🏫'
-BUILDING = '👨🏻‍💻'
-ETC = '😴'
+LEADERSHIP = "👨🏻‍🏫"
+BUILDING = "👨🏻‍💻"
+ETC = "😴"
 
 TOTAL_WORK_HOURS = 40
 
@@ -13,21 +13,25 @@ TOTAL_WORK_HOURS = 40
 
 
 def blank_lines(line: str):
-    return False if line == '\n' else True
+    return False if line == "\n" else True
 
 
 def _hour_to_minutes(hour):
     split_hour = hour.split()
     meridian = split_hour[1]
-    hour_and_minutes = split_hour[0].split(':')
-    if hour_and_minutes[0] == '12':
-        hour_and_minutes[0] = '0'
-    total_minutes = (int(hour_and_minutes[0]) * 60) + (int(hour_and_minutes[1])) + (0 if meridian == 'AM' else 720)
+    hour_and_minutes = split_hour[0].split(":")
+    if hour_and_minutes[0] == "12":
+        hour_and_minutes[0] = "0"
+    total_minutes = (
+        (int(hour_and_minutes[0]) * 60)
+        + (int(hour_and_minutes[1]))
+        + (0 if meridian == "AM" else 720)
+    )
     return total_minutes
 
 
 def _count_time(time):  # TODO maybe total_times?
-    start_and_end = time.split(' to ')
+    start_and_end = time.split(" to ")
     total_minutes = reduce(lambda x, y: y - x, map(_hour_to_minutes, start_and_end))
     return total_minutes / 60
 
@@ -74,8 +78,12 @@ def _group_events_by_date(clean_lines: List[str]):
         return acc
 
     tags_and_events = pair_tag_with_event(clean_lines, [])
-    tags_and_split_events = list(map(lambda p: (p[0], p[1].split(' at ')), tags_and_events))
-    tag_and_time_by_date = list(map(lambda p: {p[1][0]: (p[0], p[1][1])}, tags_and_split_events))
+    tags_and_split_events = list(
+        map(lambda p: (p[0], p[1].split(" at ")), tags_and_events)
+    )
+    tag_and_time_by_date = list(
+        map(lambda p: {p[1][0]: (p[0], p[1][1])}, tags_and_split_events)
+    )
 
     def group_events(events_by_date):  # TODO could this be a reduce?
         acc = {}
@@ -108,23 +116,20 @@ def clean_tag(line):
 # TODO try simplifying this following
 #  https://stackoverflow.com/questions/24831476/what-is-the-python-way-of-chaining-maps-and-filters
 def _clean(lines: List[str]):
-    return list(map(lambda l: l.rstrip('\n').lstrip('Scheduled: '),
-                    map(clean_tag,
-                        filter(lambda l: l != '\n', lines)
-                        )
-                    ))
+    return list(
+        map(
+            lambda l: l.rstrip("\n").lstrip("Scheduled: "),
+            map(clean_tag, filter(lambda l: l != "\n", lines)),
+        )
+    )
 
 
 def _generate_subtotal_output_lines(totaled_times):
     lines = []
 
     for date, tags_and_hours_totals in totaled_times.items():
-        line = f'{date}: '
-        totals = {
-            BUILDING: 0,
-            LEADERSHIP: 0,
-            ETC: 0
-        }
+        line = f"{date}: "
+        totals = {BUILDING: 0, LEADERSHIP: 0, ETC: 0}
         for pair in tags_and_hours_totals:
             tag = pair[0]
             hours = pair[1]
@@ -133,14 +138,14 @@ def _generate_subtotal_output_lines(totaled_times):
             totals[tag] = running_total + hours
 
         for tag, total in totals.items():
-            line += f'{tag}: {total} '
+            line += f"{tag}: {total} "
 
-        lines.append(line.rstrip(' '))
+        lines.append(line.rstrip(" "))
     return lines
 
 
 def _generate_targets(hours):
-    target_percentages = {BUILDING: .4, LEADERSHIP: .4, ETC: .2}
+    target_percentages = {BUILDING: 0.4, LEADERSHIP: 0.4, ETC: 0.2}
     targets = {}
 
     for tag, percentage in target_percentages.items():
@@ -158,34 +163,36 @@ def _generate_total_line(totaled_items, available_hours=40):
             tag_total = starter[tag]
             starter[tag] = tag_total + total
 
-    line = ''
+    line = ""
     for k, v in starter.items():
         line += f'{k}: {v}/{str(target[k]).rstrip(".0")} '
 
-    return line.rstrip(' ')
+    return line.rstrip(" ")
 
 
 def _main():
-    input_file_name = input('input file name:  ')
-    available_hours_input = input('available hours (default = 40):  ')
-    available_hours = 40 if available_hours_input.strip() == '' else int(available_hours_input)
-    with open(input_file_name, encoding='utf8', mode='r') as f:
+    input_file_name = input("input file name:  ")
+    available_hours_input = input("available hours (default = 40):  ")
+    available_hours = (
+        40 if available_hours_input.strip() == "" else int(available_hours_input)
+    )
+    with open(input_file_name, encoding="utf8", mode="r") as f:
         lines = f.readlines()
         cleaned = _clean(lines)
         grouped = _group_events_by_date(cleaned)
         grouped_even_more = _group_times_by_tag(grouped)
         dates_with_totals = _total_times(grouped_even_more)
 
-        output_file_name = f'calculated-{input_file_name}'
-        with open(output_file_name, 'w') as output:
+        output_file_name = f"calculated-{input_file_name}"
+        with open(output_file_name, "w") as output:
             for line in _generate_subtotal_output_lines(dates_with_totals):
-                output.write(line + '\n')
+                output.write(line + "\n")
 
-            output.write('\n')
+            output.write("\n")
             output.write(_generate_total_line(dates_with_totals, available_hours))
 
         print(f'calculations written to "{output_file_name}"')
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     _main()
