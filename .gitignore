@@ -1,2 +1,6 @@
 .idea/
 *.iml
+/pytest-report.xml
+/coverage.xml
+/.coverage
+__pycache__

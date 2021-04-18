@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from functools import reduce
-from typing import List
+from typing import List, AnyStr, Iterator, Any
+import sys
 
 LEADERSHIP = "👨🏻‍🏫"
 BUILDING = "👨🏻‍💻"
@@ -35,12 +36,7 @@ def _generate_total_line(totaled_items, available_hours=40):
     return line.rstrip(" ")
 
 
-def _main():
-    input_file_name = input("input file name:  ")
-    available_hours_input = input("available hours (default = 40):  ")
-    available_hours = (
-        40 if available_hours_input.strip() == "" else int(available_hours_input)
-    )
+def _main(input_file_name: str, available_hours: int):
     with open(input_file_name, encoding="utf8", mode="r") as f:
         lines = f.readlines()
         cleaned = _clean(lines)
@@ -59,18 +55,17 @@ def _main():
         print(f'calculations written to "{output_file_name}"')
 
 
-# TODO try simplifying this following
-#  https://stackoverflow.com/questions/24831476/what-is-the-python-way-of-chaining-maps-and-filters
 def _clean(lines: List[str]):
-    return list(
-        map(
-            lambda l: l.rstrip("\n").lstrip("Scheduled: "),
-            map(clean_tag, filter(lambda l: l != "\n", lines)),
-        )
+    no_blank_lines = filter(lambda l: l != "\n", lines)
+    lines_with_cleaned_tags = map(_clean_tag, no_blank_lines)
+    cleaned_and_stripped = map(
+        lambda l: l.rstrip("\n").lstrip("Scheduled: "), lines_with_cleaned_tags
     )
 
+    return list(cleaned_and_stripped)
 
-def clean_tag(line):
+
+def _clean_tag(line: AnyStr) -> str:
     if line.startswith(ETC):
         return ETC
     elif line.startswith(LEADERSHIP):
@@ -154,9 +149,9 @@ def _hour_to_minutes(hour):
     if hour_and_minutes[0] == "12":
         hour_and_minutes[0] = "0"
     total_minutes = (
-            (int(hour_and_minutes[0]) * 60)
-            + (int(hour_and_minutes[1]))
-            + (0 if meridian == "AM" else 720)
+        (int(hour_and_minutes[0]) * 60)
+        + (int(hour_and_minutes[1]))
+        + (0 if meridian == "AM" else 720)
     )
     return total_minutes
 
@@ -188,4 +183,12 @@ def _generate_subtotal_output_lines(totaled_times):
 
 
 if __name__ == "__main__":
-    _main()
+    if len(sys.argv) == 1:
+        print("please provide an input file name")
+        exit(-1)
+
+    input_file: str = sys.argv[1].strip()
+    print(f"input file name is '{input_file}'")
+
+    hours_input: str = input("available hours (default = 40):  ")
+    _main(input_file, 40 if hours_input.strip() == "" else int(hours_input))
