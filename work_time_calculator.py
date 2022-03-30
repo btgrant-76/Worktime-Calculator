@@ -1,39 +1,14 @@
 #!/usr/bin/env python3
-from functools import reduce
-from typing import List, AnyStr, Iterator, Any
+import re
 import sys
+from functools import reduce
+from typing import List, AnyStr
 
 LEADERSHIP = "👨🏻‍🏫"
 BUILDING = "👨🏻‍💻"
 ETC = "😴"
 
 TOTAL_WORK_HOURS = 40
-
-
-def _generate_targets(hours):
-    target_percentages = {BUILDING: 0.4, LEADERSHIP: 0.4, ETC: 0.2}
-    targets = {}
-
-    for tag, percentage in target_percentages.items():
-        targets[tag] = target_percentages[tag] * hours
-
-    return targets
-
-
-def _generate_total_line(totaled_items, available_hours=40):
-    starter = {BUILDING: 0, LEADERSHIP: 0, ETC: 0}
-    target = _generate_targets(available_hours)
-
-    for tagged_totals in totaled_items.values():
-        for tag, total in tagged_totals:
-            tag_total = starter[tag]
-            starter[tag] = tag_total + total
-
-    line = ""
-    for k, v in starter.items():
-        line += f'{k}: {v}/{str(target[k]).rstrip(".0")} '
-
-    return line.rstrip(" ")
 
 
 def _main(input_file_name: str, available_hours: int):
@@ -59,8 +34,9 @@ def _clean(lines: List[str]):
     no_blank_lines = filter(lambda l: l != "\n", lines)
     lines_with_cleaned_tags = map(_clean_tag, no_blank_lines)
     cleaned_and_stripped = map(
-        lambda l: l.rstrip("\n").lstrip("Scheduled: "), lines_with_cleaned_tags
+        lambda l: l.rstrip("\n").lstrip("Scheduled: ").replace(r", \w{3}", ""), lines_with_cleaned_tags
     )
+    cleaned_and_stripped = map(lambda cleaned: re.sub(r", \w{3}$", "", cleaned), cleaned_and_stripped)
 
     return list(cleaned_and_stripped)
 
@@ -149,9 +125,9 @@ def _hour_to_minutes(hour):
     if hour_and_minutes[0] == "12":
         hour_and_minutes[0] = "0"
     total_minutes = (
-        (int(hour_and_minutes[0]) * 60)
-        + (int(hour_and_minutes[1]))
-        + (0 if meridian == "AM" else 720)
+            (int(hour_and_minutes[0]) * 60)
+            + (int(hour_and_minutes[1]))
+            + (0 if meridian == "AM" else 720)
     )
     return total_minutes
 
@@ -180,6 +156,32 @@ def _generate_subtotal_output_lines(totaled_times):
 
         lines.append(line.rstrip(" "))
     return lines
+
+
+def _generate_total_line(totaled_items, available_hours=40):
+    starter = {BUILDING: 0, LEADERSHIP: 0, ETC: 0}
+    target = _generate_targets(available_hours)
+
+    for tagged_totals in totaled_items.values():
+        for tag, total in tagged_totals:
+            tag_total = starter[tag]
+            starter[tag] = tag_total + total
+
+    line = ""
+    for k, v in starter.items():
+        line += f'{k}: {v}/{str(target[k]).rstrip(".0")} '
+
+    return line.rstrip(" ")
+
+
+def _generate_targets(hours):
+    target_percentages = {BUILDING: 0.4, LEADERSHIP: 0.4, ETC: 0.2}
+    targets = {}
+
+    for tag, percentage in target_percentages.items():
+        targets[tag] = target_percentages[tag] * hours
+
+    return targets
 
 
 if __name__ == "__main__":

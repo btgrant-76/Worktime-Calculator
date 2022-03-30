@@ -1,3 +1,5 @@
+from pytest import mark
+
 from work_time_calculator import (
     _group_events_by_date,
     _clean,
@@ -7,8 +9,6 @@ from work_time_calculator import (
     _generate_subtotal_output_lines,
     _generate_total_line,
 )
-
-from pytest import mark
 
 FILE_LINES = [
     "😴 .5\n",
@@ -27,6 +27,23 @@ FILE_LINES = [
     "Scheduled: Mar 10, 2021 at 7:30 AM to 8:45 AM\n",
 ]
 
+FILE_LINES_WITH_TIMEZONE = [
+    "😴 .5\n",
+    "Scheduled: Mar 8, 2021 at 8:15 AM to 8:45 AM, CDT\n",
+    "\n",
+    "👨🏻‍🏫 1.75\n",
+    "Scheduled: Mar 8, 2021 at 8:45 AM to 10:30 AM, CDT\n",
+    "\n",
+    "👨🏻‍💻 .75\n",
+    "Scheduled: Mar 9, 2021 at 4:45 PM to 5:30 PM, CDT\n",
+    "\n",
+    "👨🏻‍🏫 (1)\n",
+    "Scheduled: Mar 10, 2021 at 6:00 AM to 7:00 AM, CDT\n",
+    "\n",
+    "😴 1.25\n",
+    "Scheduled: Mar 10, 2021 at 7:30 AM to 8:45 AM, CDT\n",
+]
+
 CLEANED_LINES = [
     "😴",
     "Mar 8, 2021 at 8:15 AM to 8:45 AM",
@@ -41,9 +58,13 @@ CLEANED_LINES = [
 ]
 
 
-def test_clean():
-    cleaned = _clean(FILE_LINES)
-    assert cleaned == CLEANED_LINES
+@mark.parametrize("lines, cleaned_lines", [
+    (FILE_LINES, CLEANED_LINES),
+    (FILE_LINES_WITH_TIMEZONE, CLEANED_LINES)
+])
+def test_clean(lines, cleaned_lines):
+    cleaned = _clean(lines)
+    assert cleaned == cleaned_lines
 
 
 def test_grouping():
