@@ -34,9 +34,12 @@ def _clean(lines: List[str]):
     no_blank_lines = filter(lambda l: l != "\n", lines)
     lines_with_cleaned_tags = map(_clean_tag, no_blank_lines)
     cleaned_and_stripped = map(
-        lambda l: l.rstrip("\n").lstrip("Scheduled: ").replace(r", \w{3}", ""), lines_with_cleaned_tags
+        lambda l: l.rstrip("\n").lstrip("Scheduled: ").replace(r", \w{3}", ""),
+        lines_with_cleaned_tags,
     )
-    cleaned_and_stripped = map(lambda cleaned: re.sub(r", \w{3}$", "", cleaned), cleaned_and_stripped)
+    cleaned_and_stripped = map(
+        lambda cleaned: re.sub(r", \w{3}$", "", cleaned), cleaned_and_stripped
+    )
 
     return list(cleaned_and_stripped)
 
@@ -125,9 +128,9 @@ def _hour_to_minutes(hour):
     if hour_and_minutes[0] == "12":
         hour_and_minutes[0] = "0"
     total_minutes = (
-            (int(hour_and_minutes[0]) * 60)
-            + (int(hour_and_minutes[1]))
-            + (0 if meridian == "AM" else 720)
+        (int(hour_and_minutes[0]) * 60)
+        + (int(hour_and_minutes[1]))
+        + (0 if meridian == "AM" else 720)
     )
     return total_minutes
 

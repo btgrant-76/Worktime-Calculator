@@ -58,10 +58,10 @@ CLEANED_LINES = [
 ]
 
 
-@mark.parametrize("lines, cleaned_lines", [
-    (FILE_LINES, CLEANED_LINES),
-    (FILE_LINES_WITH_TIMEZONE, CLEANED_LINES)
-])
+@mark.parametrize(
+    "lines, cleaned_lines",
+    [(FILE_LINES, CLEANED_LINES), (FILE_LINES_WITH_TIMEZONE, CLEANED_LINES)],
+)
 def test_clean(lines, cleaned_lines):
     cleaned = _clean(lines)
     assert cleaned == cleaned_lines
