@@ -37,11 +37,18 @@ def _clean(lines: List[str]):
         lambda l: l.rstrip("\n").lstrip("Scheduled: ").replace(r", \w{3}", ""),
         lines_with_cleaned_tags,
     )
-    cleaned_and_stripped = map(
-        lambda cleaned: re.sub(r", \w{3}$", "", cleaned), cleaned_and_stripped
+
+    with_to_time_separator = map(
+        # Copy/paste from Calendar.app uses "to"; output from iCalBuddy uses "-"
+        lambda line: re.sub(r"-", "to", line),
+        cleaned_and_stripped,
     )
 
-    return list(cleaned_and_stripped)
+    without_timezones = map(
+        lambda cleaned: re.sub(r", \w{3}$", "", cleaned), with_to_time_separator
+    )
+
+    return list(without_timezones)
 
 
 def _clean_tag(line: AnyStr) -> str:
