@@ -8,26 +8,67 @@ LEADERSHIP = "👨🏻‍🏫"
 BUILDING = "👨🏻‍💻"
 ETC = "😴"
 
+ALL_TAGS = [LEADERSHIP, BUILDING, ETC]
+
 TOTAL_WORK_HOURS = 40
 
 
 def _main(input_file_name: str, available_hours: int):
     with open(input_file_name, encoding="utf8", mode="r") as f:
         lines = f.readlines()
-        cleaned = _clean(lines)
-        grouped = _group_events_by_date(cleaned)
-        grouped_even_more = _group_times_by_tag(grouped)
-        dates_with_totals = _total_times(grouped_even_more)
+
+        subtotals, total_line = _calculate_work_time(available_hours, lines)
 
         output_file_name = f"calculated-{input_file_name}"
         with open(output_file_name, "w") as output:
-            for line in _generate_subtotal_output_lines(dates_with_totals):
+            for (
+                line
+            ) in subtotals:  # _generate_subtotal_output_lines(dates_with_totals):
                 output.write(line + "\n")
 
             output.write("\n")
-            output.write(_generate_total_line(dates_with_totals, available_hours))
+            output.write(
+                total_line
+            )  # (_generate_total_line(dates_with_totals, available_hours))
 
         print(f'calculations written to "{output_file_name}"')
+
+
+def _calculate_work_time(available_hours, lines):
+    # TODO refactoring from here to _total_times would be useful
+    #   should also include the output from _generate_subtotal_output_lines and _generate_total_line
+    cleaned = _clean(lines)
+    # print(f"_clean output: \n{cleaned}")
+    grouped = _group_events_by_date(cleaned)
+    # print(f"_group_events_by_date output: \n{grouped}")
+    grouped_by_tag = _group_times_by_tag(grouped)
+    # print(f"_group_times_by_tag output: \n{grouped_even_more}")
+    grouped_by_valid_tag = _filter_unmatched_tags(grouped_by_tag)
+    dates_with_totals = _total_times(grouped_by_valid_tag)
+    # print(dates_with_totals)
+    # TODO append -calculated to the end of the file name, before the extension
+    subtotals = _generate_subtotal_output_lines(dates_with_totals)
+    total_line = _generate_total_line(dates_with_totals, available_hours)
+    return subtotals, total_line
+
+
+# TODO unit test this
+def _filter_unmatched_tags(grouped_by_tag):
+    filtered = {}
+
+    for date, tagged in grouped_by_tag.items():
+        valid_tags = {}
+
+        for tag, events in tagged.items():
+            if tag in ALL_TAGS:
+                valid_tags[tag] = events
+
+        filtered[date] = valid_tags
+        # filtered[date] = {
+        #     tag: events for tag, events in tagged.items() if tag in ALL_TAGS
+        # }
+
+    return filtered
 
 
 def _clean(lines: List[str]):
@@ -73,6 +114,8 @@ def _group_events_by_date(clean_lines: List[str]):
         return acc
 
     tags_and_events = pair_tag_with_event(clean_lines, [])
+    # print(f"pair_tag_with_event output: \n{tags_and_events}")
+
     tags_and_split_events = list(
         map(lambda p: (p[0], p[1].split(" at ")), tags_and_events)
     )
@@ -158,6 +201,8 @@ def _generate_subtotal_output_lines(totaled_times):
             tag = pair[0]
             hours = pair[1]
 
+            # print(pair)
+
             running_total = totals[tag]
             totals[tag] = running_total + hours
 
@@ -168,6 +213,7 @@ def _generate_subtotal_output_lines(totaled_times):
     return lines
 
 
+# TODO add a total for all hours input
 def _generate_total_line(totaled_items, available_hours=40):
     starter = {BUILDING: 0, LEADERSHIP: 0, ETC: 0}
     target = _generate_targets(available_hours)

@@ -8,6 +8,7 @@ from work_time_calculator import (
     _count_time,
     _generate_subtotal_output_lines,
     _generate_total_line,
+    _filter_unmatched_tags,
 )
 
 FILE_LINES = [
@@ -127,6 +128,39 @@ def test_tag_grouping():
             "👨🏻‍🏫": ["8:45 AM to 10:30 AM", "1:00 PM to 3:30 PM"],
         },
         "Mar 9, 2021": {"👨🏻‍💻": ["4:45 PM to 5:30 PM"]},
+        "Mar 10, 2021": {
+            "👨🏻‍🏫": ["6:00 AM to 7:00 AM", "9:00 AM to 10:00 AM"],
+            "😴": ["7:30 AM to 8:45 AM", "10:30 AM to 12:00 PM"],
+        },
+    }
+
+
+def test_filter_unmatched_tags():
+    inputs = {
+        "Mar 8, 2021": {
+            "invalid": ["4:00 PM to 4:45 PM"],
+            "😴": ["8:15 AM to 8:45 AM"],
+            "👨🏻‍🏫": ["8:45 AM to 10:30 AM", "1:00 PM to 3:30 PM"],
+        },
+        "Mar 9, 2021": {
+            "👨🏻‍💻": ["4:45 PM to 5:30 PM"],
+            "also invalid": ["4:00 PM to 4:45 PM"],
+        },
+        "Mar 10, 2021": {
+            "👨🏻‍🏫": ["6:00 AM to 7:00 AM", "9:00 AM to 10:00 AM"],
+            "invalid, too": ["4:00 PM to 4:45 PM"],
+            "😴": ["7:30 AM to 8:45 AM", "10:30 AM to 12:00 PM"],
+        },
+    }
+
+    assert _filter_unmatched_tags(inputs) == {
+        "Mar 8, 2021": {
+            "😴": ["8:15 AM to 8:45 AM"],
+            "👨🏻‍🏫": ["8:45 AM to 10:30 AM", "1:00 PM to 3:30 PM"],
+        },
+        "Mar 9, 2021": {
+            "👨🏻‍💻": ["4:45 PM to 5:30 PM"],
+        },
         "Mar 10, 2021": {
             "👨🏻‍🏫": ["6:00 AM to 7:00 AM", "9:00 AM to 10:00 AM"],
             "😴": ["7:30 AM to 8:45 AM", "10:30 AM to 12:00 PM"],
