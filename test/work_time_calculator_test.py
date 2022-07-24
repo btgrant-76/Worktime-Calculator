@@ -44,6 +44,23 @@ FILE_LINES_WITH_TIMEZONE = [
     "Scheduled: Mar 10, 2021 at 7:30 AM to 8:45 AM, CDT\n",
 ]
 
+ICAL_BUDDY_FILE_LINES = [
+    "😴 .5\n",
+    "    Mar 8, 2021 at 8:15 AM - 8:45 AM\n",
+    "\n",
+    "👨🏻‍🏫 1.75\n",
+    "    Mar 8, 2021 at 8:45 AM - 10:30 AM\n",
+    "\n",
+    "👨🏻‍💻 .75\n",
+    "    Mar 9, 2021 at 4:45 PM - 5:30 PM\n",
+    "\n",
+    "👨🏻‍🏫 (1)\n",
+    "    Mar 10, 2021 at 6:00 AM - 7:00 AM\n",
+    "\n",
+    "😴 1.25\n",
+    "    Mar 10, 2021 at 7:30 AM - 8:45 AM\n",
+]
+
 CLEANED_LINES = [
     "😴",
     "Mar 8, 2021 at 8:15 AM to 8:45 AM",
@@ -60,7 +77,11 @@ CLEANED_LINES = [
 
 @mark.parametrize(
     "lines, cleaned_lines",
-    [(FILE_LINES, CLEANED_LINES), (FILE_LINES_WITH_TIMEZONE, CLEANED_LINES)],
+    [
+        (FILE_LINES, CLEANED_LINES),
+        (FILE_LINES_WITH_TIMEZONE, CLEANED_LINES),
+        (ICAL_BUDDY_FILE_LINES, CLEANED_LINES),
+    ],
 )
 def test_clean(lines, cleaned_lines):
     cleaned = _clean(lines)
