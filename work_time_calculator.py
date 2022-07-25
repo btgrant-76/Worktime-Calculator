@@ -19,7 +19,7 @@ def _main(input_file_name: str, available_hours: int):
 
         subtotals, total_line = _calculate_work_time(available_hours, lines)
 
-        output_file_name = f"calculated-{input_file_name}"
+        output_file_name = _generate_output_file_name(input_file_name)
         with open(output_file_name, "w") as output:
             for line in subtotals:
                 output.write(line + "\n")
@@ -36,25 +36,13 @@ def _calculate_work_time(available_hours, lines):
     grouped_by_tag = _group_times_by_tag(grouped)
     grouped_by_valid_tag = _filter_unmatched_tags(grouped_by_tag)
     dates_with_totals = _total_times(grouped_by_valid_tag)
-    # TODO append -calculated to the end of the file name, before the extension
     subtotals = _generate_subtotal_output_lines(dates_with_totals)
     total_line = _generate_total_line(dates_with_totals, available_hours)
     return subtotals, total_line
 
 
-def _filter_unmatched_tags(grouped_by_tag):
-    filtered = {}
-
-    for date, tagged in grouped_by_tag.items():
-        valid_tags = {}
-
-        for tag, events in tagged.items():
-            if tag in ALL_TAGS:
-                valid_tags[tag] = events
-
-        filtered[date] = valid_tags
-
-    return filtered
+def _generate_output_file_name(input_file_name: str):
+    return f"{input_file_name.rstrip('.txt')}-calculated.txt"
 
 
 def _clean(lines: List[str]):
@@ -145,6 +133,21 @@ def _group_times_by_tag(grouped_events):
     return final
 
 
+def _filter_unmatched_tags(grouped_by_tag):
+    filtered = {}
+
+    for date, tagged in grouped_by_tag.items():
+        valid_tags = {}
+
+        for tag, events in tagged.items():
+            if tag in ALL_TAGS:
+                valid_tags[tag] = events
+
+        filtered[date] = valid_tags
+
+    return filtered
+
+
 def _total_times(times_grouped_by_tag):
     dates_with_totaled_times = {}
     for date, tag_and_times in times_grouped_by_tag.items():
@@ -199,7 +202,6 @@ def _generate_subtotal_output_lines(totaled_times):
     return lines
 
 
-# TODO add a total for all hours input
 def _generate_total_line(totaled_items, available_hours=40):
     starter = {BUILDING: 0, LEADERSHIP: 0, ETC: 0}
     target = _generate_targets(available_hours)
@@ -209,11 +211,10 @@ def _generate_total_line(totaled_items, available_hours=40):
             tag_total = starter[tag]
             starter[tag] = tag_total + total
 
-    line = ""
-    for k, v in starter.items():
-        line += f'{k}: {v}/{str(target[k]).rstrip(".0")} '
-
-    return line.rstrip(" ")
+    total_line = " ".join(
+        [f'{k}: {v}/{str(target[k]).rstrip(".0")}' for k, v in starter.items()]
+    )
+    return f"{total_line} ({sum(starter.values())}/{available_hours})"
 
 
 def _generate_targets(hours):

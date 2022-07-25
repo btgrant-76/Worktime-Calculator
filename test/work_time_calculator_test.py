@@ -10,6 +10,7 @@ from work_time_calculator import (
     _generate_total_line,
     _filter_unmatched_tags,
     _calculate_work_time,
+    _generate_output_file_name,
 )
 
 FILE_LINES = [
@@ -252,7 +253,10 @@ def test_generate_total_line():
         "Mar 10, 2021": [("👨🏻‍🏫", 2.0), ("😴", 2.75)],
     }
 
-    assert _generate_total_line(totaled) == "👨🏻‍💻: 0.75/16 👨🏻‍🏫: 6.25/16 😴: 3.25/8"
+    assert (
+        _generate_total_line(totaled)
+        == "👨🏻‍💻: 0.75/16 👨🏻‍🏫: 6.25/16 😴: 3.25/8 (10.25/40)"
+    )
 
 
 @mark.parametrize(
@@ -273,10 +277,17 @@ def test_calculate_work_time(file_lines):
         "Mar 10, 2021: 👨🏻‍💻: 0 👨🏻‍🏫: 1.0 😴: 1.25",
     ]
 
-    assert total == "👨🏻‍💻: 0.75/16 👨🏻‍🏫: 2.75/16 😴: 1.75/8"
+    assert total == "👨🏻‍💻: 0.75/16 👨🏻‍🏫: 2.75/16 😴: 1.75/8 (5.25/40)"
 
 
 def test_generate_total_line_default_to_zero():
     totaled = {"Mar 8, 2021": [], "Mar 9, 2021": [], "Mar 10, 2021": []}
 
-    assert _generate_total_line(totaled) == "👨🏻‍💻: 0/16 👨🏻‍🏫: 0/16 😴: 0/8"
+    assert _generate_total_line(totaled) == "👨🏻‍💻: 0/16 👨🏻‍🏫: 0/16 😴: 0/8 (0/40)"
+
+
+@mark.parametrize(
+    "input_file_name, expected", [("some-date.txt", "some-date-calculated.txt")]
+)
+def test_generate_output_file_name(input_file_name, expected):
+    assert _generate_output_file_name(input_file_name) == expected
