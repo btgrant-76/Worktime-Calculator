@@ -21,38 +21,27 @@ def _main(input_file_name: str, available_hours: int):
 
         output_file_name = f"calculated-{input_file_name}"
         with open(output_file_name, "w") as output:
-            for (
-                line
-            ) in subtotals:  # _generate_subtotal_output_lines(dates_with_totals):
+            for line in subtotals:
                 output.write(line + "\n")
 
             output.write("\n")
-            output.write(
-                total_line
-            )  # (_generate_total_line(dates_with_totals, available_hours))
+            output.write(total_line)
 
         print(f'calculations written to "{output_file_name}"')
 
 
 def _calculate_work_time(available_hours, lines):
-    # TODO refactoring from here to _total_times would be useful
-    #   should also include the output from _generate_subtotal_output_lines and _generate_total_line
     cleaned = _clean(lines)
-    # print(f"_clean output: \n{cleaned}")
     grouped = _group_events_by_date(cleaned)
-    # print(f"_group_events_by_date output: \n{grouped}")
     grouped_by_tag = _group_times_by_tag(grouped)
-    # print(f"_group_times_by_tag output: \n{grouped_even_more}")
     grouped_by_valid_tag = _filter_unmatched_tags(grouped_by_tag)
     dates_with_totals = _total_times(grouped_by_valid_tag)
-    # print(dates_with_totals)
     # TODO append -calculated to the end of the file name, before the extension
     subtotals = _generate_subtotal_output_lines(dates_with_totals)
     total_line = _generate_total_line(dates_with_totals, available_hours)
     return subtotals, total_line
 
 
-# TODO unit test this
 def _filter_unmatched_tags(grouped_by_tag):
     filtered = {}
 
@@ -64,9 +53,6 @@ def _filter_unmatched_tags(grouped_by_tag):
                 valid_tags[tag] = events
 
         filtered[date] = valid_tags
-        # filtered[date] = {
-        #     tag: events for tag, events in tagged.items() if tag in ALL_TAGS
-        # }
 
     return filtered
 

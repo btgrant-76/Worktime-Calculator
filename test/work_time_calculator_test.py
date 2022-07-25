@@ -9,6 +9,7 @@ from work_time_calculator import (
     _generate_subtotal_output_lines,
     _generate_total_line,
     _filter_unmatched_tags,
+    _calculate_work_time,
 )
 
 FILE_LINES = [
@@ -23,6 +24,32 @@ FILE_LINES = [
     "\n",
     "👨🏻‍🏫 (1)\n",
     "Scheduled: Mar 10, 2021 at 6:00 AM to 7:00 AM\n",
+    "\n",
+    "😴 1.25\n",
+    "Scheduled: Mar 10, 2021 at 7:30 AM to 8:45 AM\n",
+]
+
+
+FILE_LINES_WITH_EXTRAS = [
+    "😴 .5\n",
+    "Scheduled: Mar 8, 2021 at 8:15 AM to 8:45 AM\n",
+    "\n",
+    "👨🏻‍🏫 1.75\n",
+    "Scheduled: Mar 8, 2021 at 8:45 AM to 10:30 AM\n",
+    "\n",
+    "not properly tagged\n",
+    "\n",
+    "Scheduled: Mar 8, 2021 at 10:30 AM to 11:00 AM\n",
+    "\n",
+    "👨🏻‍💻 .75\n",
+    "Scheduled: Mar 9, 2021 at 4:45 PM to 5:30 PM\n",
+    "\n",
+    "👨🏻‍🏫 (1)\n",
+    "Scheduled: Mar 10, 2021 at 6:00 AM to 7:00 AM\n",
+    "\n",
+    "not properly tagged\n",
+    "\n",
+    "Scheduled: Mar 10, 2021 at 7:00 AM to 7:30 AM\n",
     "\n",
     "😴 1.25\n",
     "Scheduled: Mar 10, 2021 at 7:30 AM to 8:45 AM\n",
@@ -226,6 +253,27 @@ def test_generate_total_line():
     }
 
     assert _generate_total_line(totaled) == "👨🏻‍💻: 0.75/16 👨🏻‍🏫: 6.25/16 😴: 3.25/8"
+
+
+@mark.parametrize(
+    "file_lines",
+    [
+        FILE_LINES,
+        FILE_LINES_WITH_TIMEZONE,
+        ICAL_BUDDY_FILE_LINES,
+        FILE_LINES_WITH_EXTRAS,
+    ],
+)
+def test_calculate_work_time(file_lines):
+    subtotal, total = _calculate_work_time(40, file_lines)
+
+    assert subtotal == [
+        "Mar 8, 2021: 👨🏻‍💻: 0 👨🏻‍🏫: 1.75 😴: 0.5",
+        "Mar 9, 2021: 👨🏻‍💻: 0.75 👨🏻‍🏫: 0 😴: 0",
+        "Mar 10, 2021: 👨🏻‍💻: 0 👨🏻‍🏫: 1.0 😴: 1.25",
+    ]
+
+    assert total == "👨🏻‍💻: 0.75/16 👨🏻‍🏫: 2.75/16 😴: 1.75/8"
 
 
 def test_generate_total_line_default_to_zero():
